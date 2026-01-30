@@ -1,0 +1,30 @@
+# Xcode
+DerivedData/
+*.xcworkspace
+*.xcuserstate
+*.xcuserdata
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+
+# SwiftPM
+.build/
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+# Other
+*.moved-aside
+*.xcuserstate
+.DS_Store
+.idea/
+*.swp
+*.lock
