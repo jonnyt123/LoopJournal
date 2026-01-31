@@ -84,7 +84,8 @@ struct MediaPreviewView: View {
                     )
             }
         }
-        .frame(height: 280)
+        .frame(maxWidth: .infinity)
+        .aspectRatio(4.0 / 3.0, contentMode: .fit)
         .onTapGesture {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                 isExpanded = true
@@ -159,7 +160,8 @@ struct MediaPreviewView: View {
                 .padding(.top, 8)
             }
         }
-        .frame(height: 200)
+        .frame(maxWidth: .infinity)
+        .aspectRatio(3.0 / 2.0, contentMode: .fit)
     }
     
     private func linkView(url: URL) -> some View {
@@ -207,7 +209,8 @@ struct MediaPreviewView: View {
             }
             .padding(20)
         }
-        .frame(height: 200)
+        .frame(maxWidth: .infinity)
+        .aspectRatio(3.0 / 2.0, contentMode: .fit)
         .onTapGesture {
             if let url = URL(string: "https://\(url.host ?? url.absoluteString)") {
                 UIApplication.shared.open(url)
@@ -263,11 +266,12 @@ struct ExpandableMediaView: View {
                             )
                             .shadow(radius: 4)
                     }
-                    .padding(.top, 50)
-                    .padding(.leading, 20)
+                    .padding()
                     
                     Spacer()
                 }
+                .safeAreaPadding(.top)
+                .safeAreaPadding(.leading)
                 
                 Spacer()
             }
@@ -319,7 +323,7 @@ struct ExpandableMediaView: View {
                             .font(.system(size: 16, weight: .medium, design: .rounded))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
-                            .padding(.horizontal, 40)
+                            .padding(.horizontal)
                     }
                 }
             }

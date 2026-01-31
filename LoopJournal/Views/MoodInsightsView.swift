@@ -3,7 +3,9 @@ import CoreData
 
 /// Mood Insights view showing personal mood trends and analytics
 struct MoodInsightsView: View {
-    let entries: [JournalEntryEntity]
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \JournalEntryEntity.date, ascending: false)]
+    ) private var entries: FetchedResults<JournalEntryEntity>
     var onClose: (() -> Void)? = nil
     
     var body: some View {
@@ -82,7 +84,7 @@ struct MoodInsightsView: View {
                 MoodSummaryCard(
                     title: "Entries",
                     emoji: "📝",
-                    subtitle: "\(entries.count) total"
+                    subtitle: "\(recentEntries.count) this week"
                 )
                 
                 MoodSummaryCard(
@@ -179,13 +181,13 @@ struct MoodInsightsView: View {
     // MARK: - Helper Properties
     
     private var mostFrequentMood: Mood? {
-        let moodCounts = Dictionary(grouping: moods, by: { $0 })
+        let moodCounts = Dictionary(grouping: recentMoods, by: { $0 })
             .mapValues { $0.count }
         return moodCounts.max(by: { $0.value < $1.value })?.key
     }
     
     private var bestDayOfWeek: String {
-        let dayCounts = Dictionary(grouping: entries, by: { Calendar.current.component(.weekday, from: $0.entryDate) })
+        let dayCounts = Dictionary(grouping: recentEntries, by: { Calendar.current.component(.weekday, from: $0.entryDate) })
             .mapValues { $0.count }
         if let bestDay = dayCounts.max(by: { $0.value < $1.value })?.key {
             let formatter = DateFormatter()
@@ -203,6 +205,24 @@ struct MoodInsightsView: View {
         return (0..<7).compactMap { day in
             calendar.date(byAdding: .day, value: -day, to: Date())
         }.reversed()
+    }
+
+    private var recentEntries: [JournalEntryEntity] {
+        let calendar = Calendar.current
+        let endDate = calendar.startOfDay(for: Date())
+        guard let startDate = calendar.date(byAdding: .day, value: -6, to: endDate) else {
+            return entries.map { $0 }
+        }
+        return entries.filter { entry in
+            let entryDate = calendar.startOfDay(for: entry.entryDate)
+            return entryDate >= startDate && entryDate <= endDate
+        }
+    }
+
+    private var recentMoods: [Mood] {
+        recentEntries.flatMap { entry in
+            entry.moodEmojisArray.compactMap { moodFromToken($0) }
+        }
     }
     
     private var moodPercentages: [(mood: Mood, percentage: Double)] {
@@ -399,10 +419,6 @@ struct MoodTimelineRow: View {
             }
             
             Spacer()
-            
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12))
-                .foregroundColor(.white.opacity(0.3))
         }
         .padding(.vertical, 8)
     }
@@ -516,5 +532,5 @@ extension Mood {
 }
 
 #Preview {
-    MoodInsightsView(entries: [])
+    MoodInsightsView()
 }

@@ -71,7 +71,8 @@ struct TutorialView: View {
                     }
                 }
                 .tabViewStyle(.page)
-
+            }
+            .safeAreaInset(edge: .bottom) {
                 HStack(spacing: 12) {
                     Button(action: onFinish) {
                         Text("Skip")
@@ -99,8 +100,7 @@ struct TutorialView: View {
                     }
                     .accessibilityLabel(currentIndex == pages.count - 1 ? "Finish tutorial" : "Next tutorial page")
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 30)
+                .padding()
             }
         }
     }

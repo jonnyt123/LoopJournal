@@ -50,6 +50,11 @@ struct JournalTabBar: View {
         )
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
+        .background(
+            GeometryReader { proxy in
+                Color.clear.preference(key: TabBarHeightPreferenceKey.self, value: proxy.size.height)
+            }
+        )
     }
     
     private func tabButton(icon: String, label: String, tab: TabSelection, index: Int) -> some View {
@@ -154,6 +159,13 @@ struct JournalActionBar: View {
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color.black.opacity(0.3))
         )
+    }
+}
+
+struct TabBarHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 

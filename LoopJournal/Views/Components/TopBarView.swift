@@ -6,9 +6,9 @@ struct TopBarView: View {
     var onListTap: (() -> Void)? = nil
     
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(alignment: .firstTextBaseline, spacing: 0) {
             // Left: App branding
-            HStack(spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Image(systemName: "infinity.circle.fill")
                     .font(.system(size: 24))
                     .foregroundStyle(
@@ -19,6 +19,9 @@ struct TopBarView: View {
                         )
                     )
                     .shadow(color: .purple.opacity(0.5), radius: 8, x: 0, y: 2)
+                    .alignmentGuide(.firstTextBaseline) { dimensions in
+                        dimensions[.bottom]
+                    }
                 
                 Text("LoopJournal")
                     .font(.system(size: 18, weight: .heavy, design: .rounded))
@@ -30,17 +33,23 @@ struct TopBarView: View {
                         )
                     )
             }
+            .alignmentGuide(.firstTextBaseline) { dimensions in
+                dimensions[.firstTextBaseline]
+            }
             .padding(.leading, 20)
             
             Spacer()
             
             // Right: List + Settings
-            HStack(spacing: 16) {
+            HStack(alignment: .firstTextBaseline, spacing: 16) {
                 if let onListTap = onListTap {
                     Button(action: onListTap) {
                         Image(systemName: "list.bullet")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.white.opacity(0.8))
+                    }
+                    .alignmentGuide(.firstTextBaseline) { dimensions in
+                        dimensions[.bottom]
                     }
                 }
 
@@ -49,12 +58,17 @@ struct TopBarView: View {
                         .font(.system(size: 20))
                         .foregroundColor(.white.opacity(0.8))
                 }
-                .padding(.trailing, 4)
+                .alignmentGuide(.firstTextBaseline) { dimensions in
+                    dimensions[.bottom]
+                }
             }
-            .padding(.trailing, 12)
+            .alignmentGuide(.firstTextBaseline) { dimensions in
+                dimensions[.firstTextBaseline]
+            }
         }
-        .padding(.top, 8)
-        .padding(.bottom, 4)
+        .frame(maxWidth: .infinity)
+        .background(Color.black.opacity(0.001))
+        .contentShape(Rectangle())
     }
 }
 

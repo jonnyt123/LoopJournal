@@ -163,28 +163,30 @@ struct LogEntryView: View {
                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .foregroundColor(.white)
             
-            TextEditor(text: $journalText)
-                .font(.system(size: 16, weight: .medium, design: .rounded))
-                .foregroundColor(.white)
-                .padding()
-                .frame(minHeight: 120, maxHeight: 200)
-                .scrollContentBackground(.hidden)
-                .background(Color.white.opacity(0.05))
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                )
-                .padding(.horizontal, 4)
-            
-            if journalText.isEmpty {
-                Text("What's on your mind? Write whatever feels right...")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.3))
-                    .padding(.horizontal, 32)
-                    .padding(.top, -110)
-                    .allowsHitTesting(false)
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: $journalText)
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundColor(.white)
+                    .padding()
+                    .frame(minHeight: 120, maxHeight: 200)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.white.opacity(0.05))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+                
+                if journalText.isEmpty {
+                    Text("What's on your mind? Write whatever feels right...")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.3))
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+                        .allowsHitTesting(false)
+                }
             }
+            .padding(.horizontal, 4)
             
             Text("\(journalText.count) characters")
                 .font(.system(size: 12))

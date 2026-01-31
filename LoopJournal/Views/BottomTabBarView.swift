@@ -47,7 +47,14 @@ struct BottomTabBar: View {
             }
             .overlay(
                 Circle()
-                    .stroke(selectedTab == index ? LinearGradient(colors: [.cyan, .purple, .pink], startPoint: .topLeading, endPoint: .bottomTrailing) : Color.clear, lineWidth: 2)
+                    .stroke(
+                        LinearGradient(
+                            colors: selectedTab == index ? [.cyan, .purple, .pink] : [.clear, .clear],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 2
+                    )
                     .shadow(color: selectedTab == index ? .cyan : .clear, radius: 8)
             )
         }

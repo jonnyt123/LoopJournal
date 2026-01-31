@@ -7,6 +7,7 @@ struct LoopJournalApp: App {
     @StateObject private var authManager = AuthManager.shared
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("hasSeenTutorial") private var hasSeenTutorial = false
+    @AppStorage("hasSeenFirstLaunchGate") private var hasSeenFirstLaunchGate = false
     
         let persistence = CoreDataManager.shared
     var body: some Scene {
@@ -23,10 +24,18 @@ struct LoopJournalApp: App {
                     .zIndex(1)
                 }
 
+                if shouldShowFirstLaunchGate {
+                    FirstLaunchGateView {
+                        hasSeenFirstLaunchGate = true
+                    }
+                    .transition(.opacity)
+                    .zIndex(2)
+                }
+
                 if authManager.isLockEnabled && !authManager.isAuthenticated {
                     LockScreenView(authManager: authManager)
                         .transition(.opacity)
-                        .zIndex(2)
+                        .zIndex(3)
                 }
             }
             .task {
@@ -61,5 +70,9 @@ struct LoopJournalApp: App {
 
     private var shouldShowTutorial: Bool {
         !hasSeenTutorial && (!authManager.isLockEnabled || authManager.isAuthenticated)
+    }
+
+    private var shouldShowFirstLaunchGate: Bool {
+        !hasSeenFirstLaunchGate && (!authManager.isLockEnabled || authManager.isAuthenticated)
     }
 }

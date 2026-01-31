@@ -58,7 +58,10 @@ LoopJournal/
 cd /Users/jonny/LoopJournal
 open LoopJournal.xcodeproj
 ```
-Select iPhone 14+ simulator and press ⌘R.
+Select any simulator or device running iOS 17.0+ and press ⌘R.
+
+## 📱 TestFlight
+Install LoopJournal from TestFlight and run it directly on any iOS device running 17.0+.
 
 ## 🎨 Features
 - TikTok-inspired vertical swipe navigation
@@ -70,4 +73,3 @@ Select iPhone 14+ simulator and press ⌘R.
 - Export entries as PDF or image
 - Mood distribution charts and streaks
 - On-device storage only
-

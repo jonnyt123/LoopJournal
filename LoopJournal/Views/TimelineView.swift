@@ -3,10 +3,9 @@ import CoreData
 
 /// Main content view with tab navigation for My Loop, Log Entry, Insights, Settings
 struct MainContentView: View {
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \JournalEntryEntity.date, ascending: false)]
-    ) private var insightEntries: FetchedResults<JournalEntryEntity>
     @State private var selectedTab: JournalTabBar.TabSelection = .myLoop
+    @State private var tabBarHeight: CGFloat = 0
+    @State private var showingSettings = false
     
     var body: some View {
         ZStack {
@@ -17,13 +16,13 @@ struct MainContentView: View {
             // Content based on selected tab
             switch selectedTab {
             case .myLoop:
-                MyLoopView()
+                MyLoopView(tabBarHeight: tabBarHeight, showingSettings: $showingSettings)
             case .insights:
-                MoodInsightsView(entries: Array(insightEntries), onClose: {
+                MoodInsightsView(onClose: {
                     selectedTab = .myLoop
                 })
             case .timeline:
-                MyLoopView()
+                MyLoopView(tabBarHeight: tabBarHeight, showingSettings: $showingSettings)
             }
             
             // Bottom tab bar overlay
@@ -33,12 +32,28 @@ struct MainContentView: View {
             }
             .ignoresSafeArea()
         }
+        .onPreferenceChange(TabBarHeightPreferenceKey.self) { newValue in
+            tabBarHeight = newValue
+        }
+        .overlay(alignment: .topTrailing) {
+            if selectedTab == .myLoop {
+                TopBarView(isProfilePresented: $showingSettings)
+                    .safeAreaPadding(.top, 0)
+                    .safeAreaPadding(.trailing, 0)
+                    .padding(.top)
+                    .padding(.trailing)
+                    .zIndex(10)
+            }
+        }
         .statusBarHidden(selectedTab == .myLoop)
         .onChange(of: selectedTab) { _, newValue in
             if newValue == .timeline {
                 NotificationCenter.default.post(name: .openTimelineList, object: nil)
                 selectedTab = .myLoop
             }
+        }
+        .fullScreenCover(isPresented: $showingSettings) {
+            SettingsView()
         }
     }
 }
@@ -47,13 +62,16 @@ struct MainContentView: View {
 struct MyLoopView: View {
     @Environment(\.managedObjectContext) private var context
     @FetchRequest private var entries: FetchedResults<JournalEntryEntity>
+    let tabBarHeight: CGFloat
+    @Binding var showingSettings: Bool
     @State private var currentIndex: Int = 0
-    @State private var showingSettings = false
     @State private var showingLogEntry = false
     @State private var showingList = false
     @State private var hapticGenerator = UIImpactFeedbackGenerator(style: .light)
 
-    init() {
+    init(tabBarHeight: CGFloat, showingSettings: Binding<Bool>) {
+        self.tabBarHeight = tabBarHeight
+        _showingSettings = showingSettings
         let request: NSFetchRequest<JournalEntryEntity> = JournalEntryEntity.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(keyPath: \JournalEntryEntity.date, ascending: false)]
         request.fetchBatchSize = 20
@@ -115,14 +133,6 @@ struct MyLoopView: View {
                 }
             }
             
-            // Top bar
-            VStack {
-                TopBarView(isProfilePresented: $showingSettings)
-                    .padding(.top, 8)
-                
-                Spacer()
-            }
-            
         }
         .safeAreaInset(edge: .bottom) {
             HStack {
@@ -145,9 +155,9 @@ struct MyLoopView: View {
                             .foregroundColor(.white)
                     }
                 }
-                .padding(.trailing, 20)
+                .padding(.trailing)
             }
-            .padding(.bottom, 96)
+            .padding(.bottom, tabBarHeight + 12)
         }
         .onChange(of: currentIndex) { _, _ in
             hapticGenerator.prepare()
@@ -167,9 +177,6 @@ struct MyLoopView: View {
         .sheet(isPresented: $showingList) {
             CoreDataTimelineView()
                 .environment(\.managedObjectContext, context)
-        }
-        .fullScreenCover(isPresented: $showingSettings) {
-            SettingsView()
         }
         .onReceive(NotificationCenter.default.publisher(for: .openTimelineList)) { _ in
             showingList = true

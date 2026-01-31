@@ -1,11 +1,11 @@
 import SwiftUI
 
-struct TopBarView: View {
+struct LegacyTopBarView: View {
     let date: Date
     var body: some View {
         ZStack {
             // Glassmorphism blur background
-            BlurView(style: .systemUltraThinMaterialDark)
+            LegacyBlurView(style: .systemUltraThinMaterialDark)
                 .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                 .shadow(color: .black.opacity(0.18), radius: 12, y: 4)
                 .padding(.horizontal, 8)
@@ -35,8 +35,8 @@ struct TopBarView: View {
         .padding(.bottom, 4)
         .background(Color.clear)
     }
-// UIKit blur wrapper for glassmorphism
-struct BlurView: UIViewRepresentable {
+    // UIKit blur wrapper for glassmorphism
+    struct LegacyBlurView: UIViewRepresentable {
     let style: UIBlurEffect.Style
     func makeUIView(context: Context) -> UIVisualEffectView {
         UIVisualEffectView(effect: UIBlurEffect(style: style))
