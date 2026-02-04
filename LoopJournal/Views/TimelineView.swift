@@ -1,48 +1,44 @@
 import SwiftUI
 import CoreData
 
-/// Main content view with tab navigation for My Loop, Log Entry, Insights, Settings
+// MARK: - Entry Pager layout verification
+// • TopBarView and BottomTabBar: created once in MainContentView; anchored with .safeAreaInset(edge: .top) and .safeAreaInset(edge: .bottom). No per-page bars.
+// • EntryPageView: renders only background (mood) + entry card; .ignoresSafeArea() only on background layer. No per-page .safeAreaInset, GeometryReader for bar layout, or .padding(.top)/.offset affecting bars.
+// • No DragGesture for paging; no manual offset/position for paging. Parallax .offset is inside .visualEffect only (does not affect layout). Paging uses .scrollTargetBehavior(.paging) + .scrollPosition(id:).
+// • Swiping between entries does not change TopBar or BottomTabBar position. Bars stay aligned; cards remain centered (JournalEntryCard uses frame(maxWidth/maxHeight, alignment: .center) and CarouselLayout constants).
+//
+// Testing checklist: (1) Swipe between entries with different moods/backgrounds. (2) Verify bars do not move. (3) Verify transition feels smooth and doesn’t stutter.
+
+/// Main content view with tab navigation for My Loop, Log Entry, Insights, Settings.
+/// TopBarView and bottom bar (plus button + JournalTabBar) are created once here and anchored via
+/// .safeAreaInset(edge: .top) / .safeAreaInset(edge: .bottom) so they stay persistent when swiping pager pages.
 struct MainContentView: View {
     @State private var selectedTab: JournalTabBar.TabSelection = .myLoop
-    @State private var tabBarHeight: CGFloat = 0
     @State private var showingSettings = false
-    
+    @State private var showingLogEntry = false
+
     var body: some View {
         ZStack {
-            // Background
             Color.black
                 .ignoresSafeArea()
-            
-            // Content based on selected tab
-            switch selectedTab {
-            case .myLoop:
-                MyLoopView(tabBarHeight: tabBarHeight, showingSettings: $showingSettings)
-            case .insights:
-                MoodInsightsView(onClose: {
-                    selectedTab = .myLoop
-                })
-            case .timeline:
-                MyLoopView(tabBarHeight: tabBarHeight, showingSettings: $showingSettings)
+
+            Group {
+                switch selectedTab {
+                case .myLoop:
+                    EntryPagerView(showingSettings: $showingSettings, showingLogEntry: $showingLogEntry)
+                case .insights:
+                    MoodInsightsView(onClose: {
+                        selectedTab = .myLoop
+                    })
+                case .timeline:
+                    EntryPagerView(showingSettings: $showingSettings, showingLogEntry: $showingLogEntry)
+                }
             }
-            
-            // Bottom tab bar overlay
-            VStack {
-                Spacer()
-                JournalTabBar(selectedTab: $selectedTab)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                topBarInsetContent
             }
-            .ignoresSafeArea()
-        }
-        .onPreferenceChange(TabBarHeightPreferenceKey.self) { newValue in
-            tabBarHeight = newValue
-        }
-        .overlay(alignment: .topTrailing) {
-            if selectedTab == .myLoop {
-                TopBarView(isProfilePresented: $showingSettings)
-                    .safeAreaPadding(.top, 0)
-                    .safeAreaPadding(.trailing, 0)
-                    .padding(.top)
-                    .padding(.trailing)
-                    .zIndex(10)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                bottomBarInsetContent
             }
         }
         .statusBarHidden(selectedTab == .myLoop)
@@ -56,34 +52,84 @@ struct MainContentView: View {
             SettingsView()
         }
     }
+
+    @ViewBuilder private var topBarInsetContent: some View {
+        if selectedTab == .myLoop || selectedTab == .timeline {
+            TopBarView(isProfilePresented: $showingSettings)
+                .padding(.top, CarouselLayout.topBarTopInset)
+                .padding(.horizontal, CarouselLayout.topBarHorizontalPadding)
+                .padding(.vertical, CarouselLayout.topBarVerticalPadding)
+                .frame(minHeight: CarouselLayout.topBarMinHeight)
+        } else {
+            Color.clear.frame(height: 0)
+        }
+    }
+
+    @ViewBuilder private var bottomBarInsetContent: some View {
+        Group {
+            if selectedTab == .myLoop || selectedTab == .timeline {
+                VStack(spacing: CarouselLayout.plusButtonBottomInset) {
+                    HStack {
+                        Spacer()
+                        Button(action: { showingLogEntry = true }) {
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [.cyan, .purple, .pink],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: CarouselLayout.plusButtonSize, height: CarouselLayout.plusButtonSize)
+                                    .shadow(color: .cyan.opacity(0.5), radius: 10, y: 5)
+                                Image(systemName: "plus")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .padding(.trailing, CarouselLayout.plusButtonTrailingInset)
+                    }
+                    JournalTabBar(selectedTab: $selectedTab)
+                }
+            } else {
+                JournalTabBar(selectedTab: $selectedTab)
+            }
+        }
+        .padding(.horizontal, CarouselLayout.tabBarHorizontalPadding)
+        .padding(.vertical, CarouselLayout.tabBarVerticalPadding)
+        .padding(.horizontal, CarouselLayout.tabBarOuterHorizontalPadding)
+        .padding(.bottom, CarouselLayout.tabBarBottomInset + CarouselLayout.tabBarOuterBottomPadding)
+    }
 }
 
-/// My Loop view - Timeline of journal entries with swipe navigation
-struct MyLoopView: View {
+/// Entry pager: one full-screen page per journal entry. Horizontal swipe moves between entries (current → previous → older).
+/// Uses iOS 17 native paging. TopBarView and bottom bar are NOT in this view—they are added by MainContentView only.
+struct EntryPagerView: View {
     @Environment(\.managedObjectContext) private var context
     @FetchRequest private var entries: FetchedResults<JournalEntryEntity>
-    let tabBarHeight: CGFloat
     @Binding var showingSettings: Bool
-    @State private var currentIndex: Int = 0
-    @State private var showingLogEntry = false
+    @Binding var showingLogEntry: Bool
+    @State private var selectedIndex: Int? = 0
     @State private var showingList = false
     @State private var hapticGenerator = UIImpactFeedbackGenerator(style: .light)
 
-    init(tabBarHeight: CGFloat, showingSettings: Binding<Bool>) {
-        self.tabBarHeight = tabBarHeight
+    init(showingSettings: Binding<Bool>, showingLogEntry: Binding<Bool>) {
         _showingSettings = showingSettings
+        _showingLogEntry = showingLogEntry
         let request: NSFetchRequest<JournalEntryEntity> = JournalEntryEntity.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(keyPath: \JournalEntryEntity.date, ascending: false)]
         request.fetchBatchSize = 20
         request.returnsObjectsAsFaults = true
-        _entries = FetchRequest(fetchRequest: request, animation: .spring())
+        _entries = FetchRequest(fetchRequest: request, animation: .none)
     }
-    
+
     var body: some View {
         ZStack {
-            moodBackgroundLayer
+            Color.black
+                .ignoresSafeArea(edges: .all)
 
-            // Main content with swipe cards
+            // Content: no .ignoresSafeArea here so parent safeAreaInset bars stay fixed when swiping.
             if entries.isEmpty {
                 VStack(spacing: 12) {
                     Text("No entries yet")
@@ -94,80 +140,30 @@ struct MyLoopView: View {
                         .foregroundColor(.white.opacity(0.7))
                 }
             } else {
-                GeometryReader { proxy in
-                    let screenWidth = max(proxy.size.width, 1)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        LazyHStack(spacing: 0) {
-                            ForEach(entries.indices, id: \.self) { index in
-                                let entry = entries[index]
-                                JournalEntryCard(
-                                    entry: entry,
-                                    showBackground: false,
-                                    onDelete: {
-                                        context.delete(entry)
-                                        try? context.save()
-                                    }
-                                )
-                                .frame(width: screenWidth, height: proxy.size.height)
-                                .background(
-                                    GeometryReader { itemProxy in
-                                        Color.clear
-                                            .preference(
-                                                key: CardCenterPreferenceKey.self,
-                                                value: [index: itemProxy.frame(in: .named("carousel")).midX]
-                                            )
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    .coordinateSpace(name: "carousel")
-                    .onPreferenceChange(CardCenterPreferenceKey.self) { centers in
-                        let screenCenter = screenWidth / 2
-                        if let nearest = centers.min(by: { abs($0.value - screenCenter) < abs($1.value - screenCenter) })?.key {
-                            if nearest != currentIndex {
-                                currentIndex = nearest
-                            }
+                ScrollView(.horizontal) {
+                    LazyHStack(spacing: 0) {
+                        ForEach(entries.indices, id: \.self) { i in
+                            EntryPageView(entry: entries[i])
+                                .containerRelativeFrame(.horizontal)
+                                .tag(i)
                         }
                     }
                 }
+                .scrollTargetLayout()
+                .scrollTargetBehavior(.paging)
+                .scrollIndicators(.hidden)
+                .scrollPosition(id: $selectedIndex)
             }
-            
         }
-        .safeAreaInset(edge: .bottom) {
-            HStack {
-                Spacer()
-                Button(action: { showingLogEntry = true }) {
-                    ZStack {
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [.cyan, .purple, .pink],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 60, height: 60)
-                            .shadow(color: .cyan.opacity(0.5), radius: 10, y: 5)
-
-                        Image(systemName: "plus")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
-                    }
-                }
-                .padding(.trailing)
-            }
-            .padding(.bottom, tabBarHeight + 12)
-        }
-        .onChange(of: currentIndex) { _, _ in
+        .onChange(of: selectedIndex) { _, _ in
             hapticGenerator.prepare()
             hapticGenerator.impactOccurred()
         }
         .onChange(of: entries.count) { _, newCount in
             if newCount == 0 {
-                currentIndex = 0
-            } else if currentIndex > newCount - 1 {
-                currentIndex = max(0, newCount - 1)
+                selectedIndex = 0
+            } else if (selectedIndex ?? 0) > newCount - 1 {
+                selectedIndex = max(0, newCount - 1)
             }
         }
         .sheet(isPresented: $showingLogEntry) {
@@ -182,27 +178,37 @@ struct MyLoopView: View {
             showingList = true
         }
     }
+}
 
-    @ViewBuilder private var moodBackgroundLayer: some View {
-        if entries.isEmpty {
-            Color.black.ignoresSafeArea()
-        } else {
-            let baseIndex = min(max(currentIndex, 0), entries.count - 1)
-            MoodBackgroundView(moodEmojis: entries[baseIndex].moodEmojis, showEffects: true)
-                .ignoresSafeArea()
+/// One full-width page: only the entry's background (mood/theme) and the entry card. No TopBarView or BottomTabBar.
+/// .ignoresSafeArea() is applied only to the background view so bar positions never shift when swiping.
+private struct EntryPageView: View {
+    let entry: JournalEntryEntity
+
+    var body: some View {
+        ZStack {
+            // Background: full-bleed, cross-fade during paging (opacity from phase.value). ignoresSafeArea only here.
+            MoodBackgroundView(moodEmojis: entry.moodEmojis, showEffects: true)
+                .ignoresSafeArea(edges: .all)
+                .scrollTransition(.interactive, axis: .horizontal) { content, phase in
+                    let t = min(1, abs(phase.value))
+                    return content.opacity(1 - t)
+                }
+
+            // Card: no scrollTransition, no parallax—card and bars stay fixed.
+            JournalEntryCard(
+                entry: entry,
+                showBackground: false,
+                onDelete: {
+                    CoreDataManager.shared.deleteInBackground(objectID: entry.objectID)
+                }
+            )
         }
     }
 }
 
 extension Notification.Name {
     static let openTimelineList = Notification.Name("openTimelineList")
-}
-
-private struct CardCenterPreferenceKey: PreferenceKey {
-    static var defaultValue: [Int: CGFloat] = [:]
-    static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
-        value.merge(nextValue(), uniquingKeysWith: { $1 })
-    }
 }
 
 #Preview {

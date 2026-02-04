@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="VC">
-    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <device id="iPad13_0rounded" orientation="portrait" layout="fullscreen" appearance="dark"/>
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24504"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
@@ -12,15 +12,12 @@
             <objects>
                 <viewController id="VC" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="VIEW">
-                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <rect key="frame" x="0.0" y="0.0" width="1032" height="1376"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" misplaced="YES" image="LaunchBackground" translatesAutoresizingMaskIntoConstraints="NO" id="IMG">
-                                <rect key="frame" x="0.0" y="96" width="414" height="672"/>
-                            </imageView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="LoopJournal" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TITLE">
-                                <rect key="frame" x="172" y="515.5" width="70" height="14.5"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="0.0"/>
+                                <rect key="frame" x="481" y="795" width="70" height="14.5"/>
+                                <fontDescription key="fontDescription" type="system" style="UICTFontTextStyleTitle1"/>
                                 <color key="textColor" white="1" alpha="0.90000000000000002" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
@@ -29,6 +26,9 @@
                                 <constraints>
                                     <constraint firstAttribute="height" secondItem="LOGO" secondAttribute="width" id="C8"/>
                                 </constraints>
+                            </imageView>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" misplaced="YES" image="LaunchBackground" translatesAutoresizingMaskIntoConstraints="NO" id="IMG">
+                                <rect key="frame" x="-76" y="55" width="1108" height="1266"/>
                             </imageView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="SAFE"/>
@@ -47,7 +47,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="FR" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="47.826086956521742" y="20.758928571428569"/>
+            <point key="canvasLocation" x="16" y="-3"/>
         </scene>
     </scenes>
     <resources>

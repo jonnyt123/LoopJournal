@@ -7,7 +7,7 @@ struct CoreDataTimelineView: View {
     @AppStorage("weekStartsOnMonday") private var weekStartsOnMonday = true
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \JournalEntryEntity.date, ascending: false)],
-        animation: .spring()
+        animation: .none
     ) private var entries: FetchedResults<JournalEntryEntity>
     
     @State private var showingAdd = false
@@ -141,10 +141,8 @@ struct CoreDataTimelineView: View {
             }
             Text(entry.note ?? "")
                 .font(.body)
-            if let data = entry.imageData, let uiImage = UIImage(data: data) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFit()
+            if let data = entry.imageData {
+                AsyncDecodedImageView(data: data)
                     .frame(height: 120)
                     .cornerRadius(12)
             }
@@ -164,14 +162,16 @@ struct CoreDataTimelineView: View {
                 Circle()
                     .fill(isSelected ? Color.accentColor.opacity(0.2) : Color.clear)
                     .frame(width: 34, height: 34)
-                Text(date.map { String(calendar.component(.day, from: $0)) } ?? "")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(date == nil ? .clear : .primary)
-                if hasEntry {
-                    Circle()
-                        .fill(Color.accentColor)
-                        .frame(width: 6, height: 6)
-                        .offset(y: 14)
+                // Use VStack + padding instead of offset for adaptive layout
+                VStack(spacing: 4) {
+                    Text(date.map { String(calendar.component(.day, from: $0)) } ?? "")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(date == nil ? .clear : .primary)
+                    if hasEntry {
+                        Circle()
+                            .fill(Color.accentColor)
+                            .frame(width: 6, height: 6)
+                    }
                 }
             }
         }
@@ -228,9 +228,35 @@ struct CoreDataTimelineView: View {
     }
 
     private func delete(at offsets: IndexSet) {
-        for index in offsets {
-            let entry = entries[index]
-            CoreDataManager.shared.delete(entry)
+        let objectIDs = offsets.map { entries[$0].objectID }
+        for objectID in objectIDs {
+            CoreDataManager.shared.deleteInBackground(objectID: objectID)
+        }
+    }
+}
+
+/// Decodes image data on a background queue to avoid blocking the main thread.
+private struct AsyncDecodedImageView: View {
+    let data: Data
+    @State private var image: UIImage?
+
+    var body: some View {
+        Group {
+            if let image = image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+            } else {
+                Color.gray.opacity(0.2)
+            }
+        }
+        .onAppear {
+            guard image == nil else { return }
+            let data = data
+            DispatchQueue.global(qos: .userInitiated).async {
+                let decoded = UIImage(data: data)
+                DispatchQueue.main.async { image = decoded }
+            }
         }
     }
 }

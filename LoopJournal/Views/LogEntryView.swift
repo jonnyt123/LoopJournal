@@ -136,7 +136,7 @@ struct LogEntryView: View {
                         .foregroundColor(.white.opacity(0.5))
                     
                     ForEach(Array(selectedMoods), id: \.self) { mood in
-                        Text(mood.emoji + " " + mood.rawValue.capitalized)
+                        Text(mood.emoji + " " + mood.displayName)
                             .font(.system(size: 12, weight: .semibold, design: .rounded))
                             .foregroundColor(.white)
                             .padding(.horizontal, 10)
@@ -349,22 +349,33 @@ struct LogEntryView: View {
             stopRecording()
         }
         isSaving = true
-        let entry = JournalEntryEntity(context: context)
-        entry.uuid = UUID()
-        entry.date = Date()
-        entry.moodEmojisRaw = selectedMoods
-            .map(\.emoji)
-            .joined(separator: ",")
-        entry.note = journalText
-        entry.imageData = selectedImageData
-        entry.voiceNoteURL = recordingURL
-        entry.linkURL = selectedLinkURL
-        try? context.save()
-        if savePhotosToDevice, let data = selectedImageData, let image = UIImage(data: data) {
-            saveImageToPhotos(image)
+        let model = JournalEntryModel(
+            id: UUID(),
+            date: Date(),
+            moodEmojis: selectedMoods.map(\.emoji),
+            note: journalText,
+            imageData: selectedImageData,
+            voiceNoteURL: recordingURL,
+            linkURL: selectedLinkURL
+        )
+        let imageDataForPhotos = savePhotosToDevice ? selectedImageData : nil
+        CoreDataManager.shared.addEntryInBackground(model: model) {
+            if let data = imageDataForPhotos {
+                DispatchQueue.global(qos: .userInitiated).async {
+                    let image = UIImage(data: data)
+                    DispatchQueue.main.async {
+                        if let image = image {
+                            self.saveImageToPhotos(image)
+                        }
+                        self.isSaving = false
+                        self.dismiss()
+                    }
+                }
+            } else {
+                self.isSaving = false
+                self.dismiss()
+            }
         }
-        isSaving = false
-        dismiss()
     }
 
     private func toggleRecording() {
@@ -497,7 +508,7 @@ struct MoodButton: View {
                         .scaleEffect(isSelected ? 1.1 : 1.0)
                 }
                 
-                Text(mood.rawValue.capitalized)
+                Text(mood.displayName)
                     .font(.system(size: 12, weight: isSelected ? .semibold : .regular, design: .rounded))
                     .foregroundColor(isSelected ? .white : .white.opacity(0.5))
             }

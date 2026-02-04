@@ -27,7 +27,6 @@ struct JournalEntryCard: View {
                 entryCardView(in: geometry)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             }
-            // ...existing code...
         }
         .onDisappear {
             voicePlayback.stop()
@@ -88,14 +87,14 @@ struct JournalEntryCard: View {
     private func entryCardView(in geometry: GeometryProxy) -> some View {
         let screenWidth = geometry.size.width
         let screenHeight = geometry.size.height
-        let cardWidth = min(screenWidth * 0.82, 360)
-        let cardHeight = min(max(screenHeight * 0.5, 300), 380)
+        let cardWidth = min(screenWidth * CarouselLayout.cardWidthFraction, CarouselLayout.cardMaxWidth)
+        let cardHeight = min(max(screenHeight * CarouselLayout.cardHeightFraction, CarouselLayout.cardMinHeight), CarouselLayout.cardMaxHeight)
         return ZStack {
-            BlurView(style: .systemUltraThinMaterialDark)
-                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
+            RoundedRectangle(cornerRadius: CarouselLayout.cardCornerRadius, style: .continuous)
+                .fill(Color.white.opacity(0.06))
+            RoundedRectangle(cornerRadius: CarouselLayout.cardCornerRadius, style: .continuous)
                 .fill(Color.white.opacity(0.08))
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
+            RoundedRectangle(cornerRadius: CarouselLayout.cardCornerRadius, style: .continuous)
                 .stroke(Color.white.opacity(0.18), lineWidth: 1)
 
             ScrollView {
@@ -122,12 +121,12 @@ struct JournalEntryCard: View {
                         )
                     }
                 }
-                .padding(24)
+                .padding(CarouselLayout.cardContentPadding)
             }
             .scrollIndicators(.hidden)
         }
         .frame(width: cardWidth, height: cardHeight)
-        .shadow(color: Color.black.opacity(0.25), radius: 18, y: 10)
+        .shadow(color: Color.black.opacity(0.22), radius: 8, y: 4)
         .overlay(alignment: .topTrailing) {
             if let onDelete = onDelete {
                 Button(action: onDelete) {
@@ -138,7 +137,7 @@ struct JournalEntryCard: View {
                         .background(Color.black.opacity(0.35))
                         .clipShape(Circle())
                 }
-                .padding(12)
+                .padding(CarouselLayout.cardDeleteButtonInset)
                 .contentShape(Rectangle())
             }
         }
@@ -151,7 +150,7 @@ struct JournalEntryCard: View {
         case "😌", "😇", "🧘", "😴", "🫶": return "Calm"
         case "🎧": return "Focus"
         case "💭": return "Reflective"
-        case "🧠": return "Thoughtful"
+        case "🧠": return "Productive"
         case "🌈": return "Joyful"
         case "😡": return "Angry"
         case "😰": return "Anxious"
@@ -378,6 +377,7 @@ struct MoodBackgroundView: View {
 
                 ParticleOverlay(emoji: moodEmojis.first ?? "✨", count: 8)
                     .allowsHitTesting(false)
+                    .drawingGroup()
             }
 
             LinearGradient(
@@ -391,6 +391,7 @@ struct MoodBackgroundView: View {
             )
             .ignoresSafeArea()
         }
+        .drawingGroup()
         .onAppear {
             if effectiveEffects {
                 withAnimation(.easeInOut(duration: 0.4)) {

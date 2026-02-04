@@ -25,7 +25,7 @@
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
-		<true/>
+		<false/>
 	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
@@ -64,5 +64,13 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>LoopJournal uses your photo library so you can attach photos to journal entries.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>LoopJournal can save a copy of photos you attach to entries into your Photo Library when you turn on “Save photos to device” in Settings.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>LoopJournal uses the microphone to record voice notes for your journal entries.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>LoopJournal uses Face ID to unlock the app when you enable app lock in Settings. Biometric data is not stored or sent anywhere.</string>
 </dict>
 </plist>

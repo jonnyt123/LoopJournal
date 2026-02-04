@@ -219,9 +219,9 @@ struct MediaPreviewView: View {
     }
     
     private func loadImage(named imageName: String) {
-        // Try to load from assets
-        if let image = UIImage(named: imageName) {
-            self.image = image
+        DispatchQueue.global(qos: .userInitiated).async {
+            let loaded = UIImage(named: imageName)
+            DispatchQueue.main.async { self.image = loaded }
         }
     }
 

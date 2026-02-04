@@ -60,6 +60,7 @@ struct ParticleOverlay: View {
             isLowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
             animate = canAnimate
         }
+        .drawingGroup()
     }
 
     private var canAnimate: Bool {

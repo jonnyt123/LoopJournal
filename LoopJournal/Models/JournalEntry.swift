@@ -140,6 +140,14 @@ enum Mood: String, CaseIterable {
             )
         }
     }
+
+    /// Label shown in the log entry emoji selector (and elsewhere in UI). Rainbow 🌈 shows as "Joyful".
+    var displayName: String {
+        switch self {
+        case .inspired: return "Joyful"
+        default: return rawValue.capitalized
+        }
+    }
 }
 
 /// Helper function to get gradient for mood array

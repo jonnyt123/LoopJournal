@@ -439,11 +439,17 @@ struct MoodTimelineRow: View {
     }
 }
 
+private struct MoodBarWidthPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
+
 struct MoodDistributionBar: View {
     let mood: Mood
     let percentage: Double
     let color: Color
-    
+    @State private var barWidth: CGFloat = 0
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -457,25 +463,30 @@ struct MoodDistributionBar: View {
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
             }
-            
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.white.opacity(0.1))
-                        .frame(height: 8)
-                    
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(
-                            LinearGradient(
-                                colors: [color, color.opacity(0.7)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
+
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.white.opacity(0.1))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 8)
+
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(
+                        LinearGradient(
+                            colors: [color, color.opacity(0.7)],
+                            startPoint: .leading,
+                            endPoint: .trailing
                         )
-                        .frame(width: geometry.size.width * (percentage / 100), height: 8)
-                }
+                    )
+                    .frame(width: barWidth * (percentage / 100), height: 8)
             }
             .frame(height: 8)
+            .background(
+                GeometryReader { g in
+                    Color.clear.preference(key: MoodBarWidthPreferenceKey.self, value: g.size.width)
+                }
+            )
+            .onPreferenceChange(MoodBarWidthPreferenceKey.self) { barWidth = $0 }
         }
     }
 }

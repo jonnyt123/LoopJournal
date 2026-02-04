@@ -8,6 +8,7 @@ struct JournalEntryModel: Identifiable {
     let note: String
     let imageData: Data?
     let voiceNoteURL: URL?
+    let linkURL: URL?
 }
 
 extension JournalEntryModel {
@@ -18,5 +19,6 @@ extension JournalEntryModel {
         self.note = entity.note ?? ""
         self.imageData = entity.imageData
         self.voiceNoteURL = entity.voiceNoteURL
+        self.linkURL = entity.linkURL
     }
 }

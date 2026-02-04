@@ -1,17 +1,32 @@
 import Foundation
 import CoreData
+import os
 
 class CoreDataManager {
     static let shared = CoreDataManager()
     let container: NSPersistentContainer
     var context: NSManagedObjectContext { container.viewContext }
-    
+
+    /// True if the store failed to load; app can still run with empty data.
+    private(set) var didFailToLoadStore = false
+    private static let logger = Logger(subsystem: "com.loopjournal.app", category: "CoreData")
+
     private init() {
         let model = CoreDataManager.makeModel()
         container = NSPersistentContainer(name: "LoopJournal", managedObjectModel: model)
-        container.loadPersistentStores { _, error in
-            if let error = error {
-                fatalError("Core Data failed: \(error.localizedDescription)")
+        container.viewContext.automaticallyMergesChangesFromParent = true
+        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+
+        if let description = container.persistentStoreDescriptions.first {
+            description.shouldMigrateStoreAutomatically = true
+            description.shouldInferMappingModelAutomatically = true
+        }
+
+        container.loadPersistentStores { [weak self] _, error in
+            if let error = error as NSError? {
+                Self.logger.error("Core Data store failed to load: \(error.localizedDescription)")
+                self?.didFailToLoadStore = true
+                return
             }
         }
     }
@@ -45,8 +60,11 @@ class CoreDataManager {
     }
     
     func save() {
-        if context.hasChanges {
-            try? context.save()
+        guard !didFailToLoadStore, context.hasChanges else { return }
+        do {
+            try context.save()
+        } catch {
+            Self.logger.error("Core Data save failed: \(error.localizedDescription)")
         }
     }
     
@@ -58,6 +76,7 @@ class CoreDataManager {
         entry.note = model.note
         entry.imageData = model.imageData
         entry.voiceNoteURL = model.voiceNoteURL
+        entry.linkURL = model.linkURL
         save()
     }
     
@@ -73,5 +92,48 @@ class CoreDataManager {
         entry.imageData = model.imageData
         entry.voiceNoteURL = model.voiceNoteURL
         save()
+    }
+
+    /// Performs delete on a background context so the main thread is not blocked.
+    func deleteInBackground(objectID: NSManagedObjectID, completion: (() -> Void)? = nil) {
+        let container = self.container
+        DispatchQueue.global(qos: .userInitiated).async {
+            let bg = container.newBackgroundContext()
+            bg.performAndWait {
+                let obj = bg.object(with: objectID)
+                bg.delete(obj)
+                do {
+                    try bg.save()
+                } catch {
+                    Self.logger.error("Background delete save failed: \(error.localizedDescription)")
+                }
+            }
+            DispatchQueue.main.async { completion?() }
+        }
+    }
+
+    /// Performs insert + save on a background context so the main thread is not blocked.
+    func addEntryInBackground(model: JournalEntryModel, completion: @escaping () -> Void) {
+        let container = self.container
+        let modelCopy = model
+        DispatchQueue.global(qos: .userInitiated).async {
+            let bg = container.newBackgroundContext()
+            bg.performAndWait {
+                let entry = JournalEntryEntity(context: bg)
+                entry.uuid = modelCopy.id
+                entry.date = modelCopy.date
+                entry.moodEmojisRaw = modelCopy.moodEmojis.joined(separator: ",")
+                entry.note = modelCopy.note
+                entry.imageData = modelCopy.imageData
+                entry.voiceNoteURL = modelCopy.voiceNoteURL
+                entry.linkURL = modelCopy.linkURL
+                do {
+                    try bg.save()
+                } catch {
+                    Self.logger.error("Background add save failed: \(error.localizedDescription)")
+                }
+            }
+            DispatchQueue.main.async { completion() }
+        }
     }
 }

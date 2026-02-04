@@ -1,13 +1,28 @@
 import SwiftUI
 
+/// Preference key for lock screen container size (adaptive layout: size from background only).
+private struct LockScreenBaseSizePreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
+
 /// Custom lock screen shown when app is locked
 struct LockScreenView: View {
     @ObservedObject var authManager: AuthManager
     @State private var isAnimating = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var isLowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
-    
+    @State private var baseSize: CGFloat = 400
+
+    private var lockSizes: (glow: CGFloat, logo: CGFloat, biometric: CGFloat, icon: CGFloat) {
+        (baseSize * 0.42, baseSize * 0.28, baseSize * 0.18, baseSize * 0.075)
+    }
+
     var body: some View {
+        lockContent
+    }
+
+    private var lockContent: some View {
         ZStack {
             // Background with blur
             LinearGradient(
@@ -19,22 +34,15 @@ struct LockScreenView: View {
                 endPoint: .bottom
             )
             .ignoresSafeArea()
-            
+
             // Blur overlay effect
             Color.black.opacity(0.3)
                 .ignoresSafeArea()
-            
-            GeometryReader { proxy in
-                let baseSize = min(proxy.size.width, proxy.size.height)
-                let glowSize = baseSize * 0.42
-                let logoSize = baseSize * 0.28
-                let biometricSize = baseSize * 0.18
-                let iconSize = baseSize * 0.075
 
-                VStack(spacing: 40) {
+            VStack(spacing: 40) {
                     Spacer()
-                    
-                    // App logo with animation
+
+                    // App logo with animation (sizes from baseSize for adaptive layout)
                     ZStack {
                         // Outer glow
                         Circle()
@@ -47,10 +55,10 @@ struct LockScreenView: View {
                                     ],
                                     center: .center,
                                     startRadius: 0,
-                                    endRadius: glowSize * 0.55
+                                    endRadius: lockSizes.glow * 0.55
                                 )
                             )
-                            .frame(width: glowSize, height: glowSize)
+                            .frame(width: lockSizes.glow, height: lockSizes.glow)
                             .scaleEffect(isAnimating ? 1.1 : 1.0)
                             .animation(
                                 .easeInOut(duration: 2)
@@ -70,7 +78,7 @@ struct LockScreenView: View {
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .frame(width: logoSize, height: logoSize)
+                            .frame(width: lockSizes.logo, height: lockSizes.logo)
                             .overlay(
                                 Circle()
                                     .stroke(
@@ -85,7 +93,7 @@ struct LockScreenView: View {
                         
                         // Infinity icon
                         Image(systemName: "infinity.circle.fill")
-                            .font(.system(size: iconSize))
+                            .font(.system(size: lockSizes.icon))
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: [.cyan, .purple, .pink],
@@ -126,7 +134,7 @@ struct LockScreenView: View {
                                             endPoint: .bottomTrailing
                                         )
                                     )
-                                    .frame(width: biometricSize, height: biometricSize)
+                                    .frame(width: lockSizes.biometric, height: lockSizes.biometric)
                                     .overlay(
                                         Circle()
                                             .stroke(
@@ -141,7 +149,7 @@ struct LockScreenView: View {
                                 
                                 // Biometric icon
                                 Image(systemName: authManager.biometricType.iconName)
-                                    .font(.system(size: biometricSize * 0.45))
+                                    .font(.system(size: lockSizes.biometric * 0.45))
                                     .foregroundStyle(
                                         LinearGradient(
                                             colors: [.cyan, .purple],
@@ -194,8 +202,16 @@ struct LockScreenView: View {
                     .safeAreaPadding(.bottom)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+                .background(
+                    GeometryReader { g in
+                        Color.clear.preference(
+                            key: LockScreenBaseSizePreferenceKey.self,
+                            value: min(g.size.width, g.size.height)
+                        )
+                    }
+                )
         }
+        .onPreferenceChange(LockScreenBaseSizePreferenceKey.self) { baseSize = $0 }
         .onAppear {
             isAnimating = canAnimate
         }

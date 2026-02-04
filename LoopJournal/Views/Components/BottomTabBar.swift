@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Personal journal tab bar with privacy-first labeling
+/// Personal journal tab bar; placement follows Thoughtful reference (tabBarBottomInset in MainContentView).
 struct JournalTabBar: View {
     @Binding var selectedTab: TabSelection
     @State private var isPressed: [Bool] = Array(repeating: false, count: 3)
@@ -49,7 +49,7 @@ struct JournalTabBar: View {
                 .blur(radius: 0.5)
         )
         .padding(.horizontal, 16)
-        .padding(.bottom, 8)
+        .padding(.bottom, 16)
         .background(
             GeometryReader { proxy in
                 Color.clear.preference(key: TabBarHeightPreferenceKey.self, value: proxy.size.height)
