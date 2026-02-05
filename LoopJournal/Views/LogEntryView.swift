@@ -396,9 +396,12 @@ struct LogEntryView: View {
                     return
                 }
                 do {
-                    try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
-                    try session.setActive(true)
-                    let url = newRecordingURL()
+                    try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
+                    try session.setActive(true, options: .notifyOthersOnDeactivation)
+                    guard let url = newRecordingURL() else {
+                        recordingError = "Unable to create recording file."
+                        return
+                    }
                     let quality = AudioQuality(rawValue: audioQuality) ?? .standard
                     let settings = recordingSettings(for: quality)
                     let recorder = try AVAudioRecorder(url: url, settings: settings)
@@ -427,8 +430,8 @@ struct LogEntryView: View {
         isRecording = false
     }
 
-    private func newRecordingURL() -> URL {
-        let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    private func newRecordingURL() -> URL? {
+        guard let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
         return directory.appendingPathComponent("voice-\(UUID().uuidString).m4a")
     }
 
@@ -437,7 +440,7 @@ struct LogEntryView: View {
         case .standard:
             return [
                 AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-                AVSampleRateKey: 12000,
+                AVSampleRateKey: 44100,
                 AVNumberOfChannelsKey: 1,
                 AVEncoderAudioQualityKey: AVAudioQuality.medium.rawValue
             ]

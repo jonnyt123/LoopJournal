@@ -34,8 +34,8 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: false
         SWIFT_EMIT_LOC_STRINGS: YES
-        TARGETED_DEVICE_FAMILY: "1,2"
-        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
+        TARGETED_DEVICE_FAMILY: "1"
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
         CODE_SIGN_IDENTITY: "Apple Development"
         LD_RUNPATH_SEARCH_PATHS:
           - $(inherited)
@@ -55,13 +55,6 @@ targets:
           UIImageName: ""
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
-        UISupportedInterfaceOrientations~ipad:
-          - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationPortraitUpsideDown
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
           UISceneConfigurations: {}
