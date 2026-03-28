@@ -352,6 +352,7 @@ struct LogEntryView: View {
         let model = JournalEntryModel(
             id: UUID(),
             date: Date(),
+            updatedAt: Date(),
             moodEmojis: selectedMoods.map(\.emoji),
             note: journalText,
             imageData: selectedImageData,

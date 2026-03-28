@@ -6,7 +6,7 @@ struct CoreDataTimelineView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("weekStartsOnMonday") private var weekStartsOnMonday = true
     @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \JournalEntryEntity.date, ascending: false)],
+        sortDescriptors: [NSSortDescriptor(keyPath: \JournalEntryEntity.updatedAt, ascending: false)],
         animation: .none
     ) private var entries: FetchedResults<JournalEntryEntity>
     

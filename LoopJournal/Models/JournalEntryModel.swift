@@ -4,6 +4,7 @@ import SwiftUI
 struct JournalEntryModel: Identifiable {
     let id: UUID
     let date: Date
+    let updatedAt: Date
     let moodEmojis: [String]
     let note: String
     let imageData: Data?
@@ -15,6 +16,7 @@ extension JournalEntryModel {
     init(entity: JournalEntryEntity) {
         self.id = entity.uuid ?? UUID()
         self.date = entity.date ?? Date()
+        self.updatedAt = entity.updatedAt ?? entity.date ?? Date()
         self.moodEmojis = entity.moodEmojisArray
         self.note = entity.note ?? ""
         self.imageData = entity.imageData
