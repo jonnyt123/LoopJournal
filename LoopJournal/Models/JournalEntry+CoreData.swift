@@ -14,6 +14,7 @@ extension JournalEntryEntity: MoodEmojisProvider {
     }
     @NSManaged var uuid: UUID?
     @NSManaged var date: Date?
+    @NSManaged var updatedAt: Date?
     @NSManaged @objc(moodEmojis) var moodEmojisRaw: String? // comma-separated
     @NSManaged var note: String?
     @NSManaged var imageData: Data?

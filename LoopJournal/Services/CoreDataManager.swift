@@ -31,6 +31,23 @@ class CoreDataManager {
         }
     }
 
+    /// For testing only: creates a manager backed by an in-memory store.
+    internal init(inMemory: Bool) {
+        let model = CoreDataManager.makeModel()
+        container = NSPersistentContainer(name: "LoopJournal", managedObjectModel: model)
+        if inMemory {
+            container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
+        }
+        container.viewContext.automaticallyMergesChangesFromParent = true
+        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        container.loadPersistentStores { [weak self] _, error in
+            if let error = error as NSError? {
+                Self.logger.error("Core Data in-memory store failed to load: \(error.localizedDescription)")
+                self?.didFailToLoadStore = true
+            }
+        }
+    }
+
     private static func makeModel() -> NSManagedObjectModel {
         let model = NSManagedObjectModel()
         let entity = NSEntityDescription()
@@ -47,6 +64,7 @@ class CoreDataManager {
 
         let uuid = attribute("uuid", type: .UUIDAttributeType)
         let date = attribute("date", type: .dateAttributeType)
+        let updatedAt = attribute("updatedAt", type: .dateAttributeType)
         let moodEmojis = attribute("moodEmojis", type: .stringAttributeType)
         let note = attribute("note", type: .stringAttributeType)
         let imageData = attribute("imageData", type: .binaryDataAttributeType)
@@ -54,7 +72,7 @@ class CoreDataManager {
         let voiceNoteURL = attribute("voiceNoteURL", type: .URIAttributeType)
         let linkURL = attribute("linkURL", type: .URIAttributeType)
 
-        entity.properties = [uuid, date, moodEmojis, note, imageData, voiceNoteURL, linkURL]
+        entity.properties = [uuid, date, updatedAt, moodEmojis, note, imageData, voiceNoteURL, linkURL]
         model.entities = [entity]
         return model
     }
@@ -72,6 +90,7 @@ class CoreDataManager {
         let entry = JournalEntryEntity(context: context)
         entry.uuid = model.id
         entry.date = model.date
+        entry.updatedAt = Date()
         entry.moodEmojisRaw = model.moodEmojis.joined(separator: ",")
         entry.note = model.note
         entry.imageData = model.imageData
@@ -87,6 +106,7 @@ class CoreDataManager {
     
     func update(_ entry: JournalEntryEntity, with model: JournalEntryModel) {
         entry.date = model.date
+        entry.updatedAt = Date()
         entry.moodEmojisRaw = model.moodEmojis.joined(separator: ",")
         entry.note = model.note
         entry.imageData = model.imageData
@@ -122,6 +142,7 @@ class CoreDataManager {
                 let entry = JournalEntryEntity(context: bg)
                 entry.uuid = modelCopy.id
                 entry.date = modelCopy.date
+                entry.updatedAt = Date()
                 entry.moodEmojisRaw = modelCopy.moodEmojis.joined(separator: ",")
                 entry.note = modelCopy.note
                 entry.imageData = modelCopy.imageData

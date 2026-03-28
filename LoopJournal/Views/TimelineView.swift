@@ -118,7 +118,7 @@ struct EntryPagerView: View {
         _showingSettings = showingSettings
         _showingLogEntry = showingLogEntry
         let request: NSFetchRequest<JournalEntryEntity> = JournalEntryEntity.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(keyPath: \JournalEntryEntity.date, ascending: false)]
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \JournalEntryEntity.updatedAt, ascending: false)]
         request.fetchBatchSize = 20
         request.returnsObjectsAsFaults = true
         _entries = FetchRequest(fetchRequest: request, animation: .none)

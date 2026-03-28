@@ -68,6 +68,7 @@ struct AddEditEntryView: View {
         entryObj.note = note
         entryObj.imageData = imageData
         entryObj.date = date
+        entryObj.updatedAt = Date()
         try? context.save()
         dismiss()
     }

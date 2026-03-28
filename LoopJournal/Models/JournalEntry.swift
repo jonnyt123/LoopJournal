@@ -6,6 +6,7 @@ import CoreData
 struct JournalEntry: Identifiable {
     let id: UUID
     let date: Date
+    let updatedAt: Date
     let moodEmojis: [String] // 1–3 emojis
     let note: String
     let media: MediaType?
@@ -21,6 +22,7 @@ extension JournalEntry {
         let media: MediaType? = nil
         self.id = entity.uuid ?? UUID()
         self.date = date
+        self.updatedAt = entity.updatedAt ?? date
         self.moodEmojis = moodEmojis
         self.note = entity.note ?? ""
         self.media = media
